@@ -4,7 +4,6 @@
     "slug": "huella",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "huella",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -16,21 +15,20 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#E87040"
-      },
       "package": "com.huella.app",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyD3gsEL2fhhJ7KoqBwtcgoD6MO0V6jCQqM"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
@@ -43,6 +41,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "076b7909-324a-4fc3-b531-e364491fb623"
+      }
     }
   }
 }
