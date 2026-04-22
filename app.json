@@ -37,6 +37,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Permite que Huella acceda a tu ubicación para mostrar casos cercanos."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          }
+        }
       ]
     ],
     "experiments": {
