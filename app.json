@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.huella.app",
       "config": {
-        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        "googleMapsApiKey": "AIzaSyD3gsEL2fhhJ7KoqBwtcgoD6MO0V6jCQqM"
       }
     },
     "android": {
@@ -23,7 +23,7 @@
       "package": "com.huella.app",
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "apiKey": "AIzaSyD3gsEL2fhhJ7KoqBwtcgoD6MO0V6jCQqM"
         }
       }
     },
