@@ -4,10 +4,19 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { trpc } from '../utils/trpc';
+import { supabase } from '../utils/supabase';
+
+interface Case {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  latitude: number;
+  longitude: number;
+}
 
 export default function MapScreen() {
-  const { data: cases, isLoading } = trpc.getCases.useQuery();
+  const [cases, setCases] = useState<Case[]>([]);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -21,6 +30,12 @@ export default function MapScreen() {
 
       let loc = await Location.getCurrentPositionAsync({});
       setLocation(loc);
+
+      // Fetch cases from Supabase
+      const { data, error } = await supabase.from('cases').select('*').eq('status', 'active');
+      if (!error && data) {
+        setCases(data);
+      }
     })();
   }, []);
 

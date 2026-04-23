@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { trpc } from '../utils/trpc';
+import { supabase } from '../utils/supabase';
 import * as Location from 'expo-location';
 
 export default function ReportScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const createCase = trpc.createCase.useMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = async () => {
     if (!selectedType) return;
@@ -20,7 +20,8 @@ export default function ReportScreen() {
       }
       let loc = await Location.getCurrentPositionAsync({});
       
-      await createCase.mutateAsync({
+      setIsSubmitting(true);
+      const { error: insertError } = await supabase.from('cases').insert({
         title: selectedType === 'lost' ? 'Mascota Perdida' : selectedType === 'found' ? 'Mascota Encontrada' : 'Adopción',
         description: 'Reporte generado desde la app móvil.',
         type: selectedType,
@@ -28,11 +29,16 @@ export default function ReportScreen() {
         longitude: loc.coords.longitude,
       });
 
+      if (insertError) throw insertError;
+
       Alert.alert('¡Éxito!', 'El caso ha sido reportado en el mapa.', [
         { text: 'OK', onPress: () => setSelectedType(null) }
       ]);
     } catch (err) {
+      console.error(err);
       Alert.alert('Error', 'Hubo un problema de conexión con el servidor.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -87,12 +93,12 @@ export default function ReportScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.nextButton, (!selectedType || createCase.isPending) && styles.disabledButton]}
-          disabled={!selectedType || createCase.isPending}
+          style={[styles.nextButton, (!selectedType || isSubmitting) && styles.disabledButton]}
+          disabled={!selectedType || isSubmitting}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>{createCase.isPending ? 'Enviando...' : 'Reportar Inmediatamente'}</Text>
-          {!createCase.isPending && <Ionicons name="arrow-forward" size={20} color="#ffffff" />}
+          <Text style={styles.nextButtonText}>{isSubmitting ? 'Enviando...' : 'Reportar Inmediatamente'}</Text>
+          {!isSubmitting && <Ionicons name="arrow-forward" size={20} color="#ffffff" />}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
