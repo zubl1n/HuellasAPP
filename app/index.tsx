@@ -1,19 +1,36 @@
-import React from 'react';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, Platform, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Mock Data
-const MOCK_CASES = [
-  { id: '1', title: 'Perro Perdido', description: 'Poodle blanco, collar rojo.', type: 'lost', latitude: -33.4489, longitude: -70.6693, color: '#E87040' },
-  { id: '2', title: 'Gato Encontrado', description: 'Gato gris atigrado, muy dócil.', type: 'found', latitude: -33.4372, longitude: -70.6506, color: '#4CAF50' },
-  { id: '3', title: 'En Adopción', description: 'Cachorro mestizo busca hogar.', type: 'adoption', latitude: -33.4569, longitude: -70.6483, color: '#3B82F6' },
-];
+import * as Location from 'expo-location';
+import { trpc } from '../utils/trpc';
 
 export default function MapScreen() {
-  const initialRegion = {
-    latitude: -33.4489,
+  const { data: cases, isLoading } = trpc.getCases.useQuery();
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permiso de ubicación denegado');
+        return;
+      }
+
+      let loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc);
+    })();
+  }, []);
+
+  const initialRegion = location ? {
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  } : {
+    latitude: -33.4489, // Santiago default fallback
     longitude: -70.6693,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
@@ -35,20 +52,26 @@ export default function MapScreen() {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        {MOCK_CASES.map((c) => (
-          <Marker
-            key={c.id}
-            coordinate={{ latitude: c.latitude, longitude: c.longitude }}
-            pinColor={c.color}
-          >
-            <Callout>
-              <View style={styles.callout}>
-                <Text style={styles.calloutTitle}>{c.title}</Text>
-                <Text style={styles.calloutDesc}>{c.description}</Text>
-              </View>
-            </Callout>
-          </Marker>
-        ))}
+        {cases?.map((c) => {
+          let pinColor = '#E87040';
+          if (c.type === 'found') pinColor = '#4CAF50';
+          if (c.type === 'adoption') pinColor = '#3B82F6';
+
+          return (
+            <Marker
+              key={c.id.toString()}
+              coordinate={{ latitude: c.latitude, longitude: c.longitude }}
+              pinColor={pinColor}
+            >
+              <Callout>
+                <View style={styles.callout}>
+                  <Text style={styles.calloutTitle}>{c.title}</Text>
+                  <Text style={styles.calloutDesc}>{c.description}</Text>
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
       </MapView>
 
       {/* Botón flotante de mi ubicación */}

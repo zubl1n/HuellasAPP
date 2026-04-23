@@ -1,10 +1,31 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import { trpc } from '../utils/trpc';
+
+// Use localhost for iOS simulator, 10.0.2.2 for Android emulator, or your local IP for physical device
+const localhost = Platform.OS === 'ios' ? 'localhost' : '10.0.2.2';
+const API_URL = `http://${localhost}:3000/trpc`;
 
 export default function RootLayout() {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: API_URL,
+        }),
+      ],
+    }),
+  );
+
   return (
-    <Tabs
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#E87040',
@@ -58,6 +79,8 @@ export default function RootLayout() {
         }}
       />
     </Tabs>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
 

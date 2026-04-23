@@ -1,10 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { trpc } from '../utils/trpc';
+import * as Location from 'expo-location';
 
 export default function ReportScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const createCase = trpc.createCase.useMutation();
+
+  const handleNext = async () => {
+    if (!selectedType) return;
+    
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Error', 'Necesitamos tu ubicación para reportar el caso');
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({});
+      
+      await createCase.mutateAsync({
+        title: selectedType === 'lost' ? 'Mascota Perdida' : selectedType === 'found' ? 'Mascota Encontrada' : 'Adopción',
+        description: 'Reporte generado desde la app móvil.',
+        type: selectedType,
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+
+      Alert.alert('¡Éxito!', 'El caso ha sido reportado en el mapa.', [
+        { text: 'OK', onPress: () => setSelectedType(null) }
+      ]);
+    } catch (err) {
+      Alert.alert('Error', 'Hubo un problema de conexión con el servidor.');
+    }
+  };
 
   const ReportOption = ({ type, title, icon, color }: { type: string, title: string, icon: any, color: string }) => (
     <TouchableOpacity
@@ -57,11 +87,12 @@ export default function ReportScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.nextButton, !selectedType && styles.disabledButton]}
-          disabled={!selectedType}
+          style={[styles.nextButton, (!selectedType || createCase.isPending) && styles.disabledButton]}
+          disabled={!selectedType || createCase.isPending}
+          onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>Continuar</Text>
-          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+          <Text style={styles.nextButtonText}>{createCase.isPending ? 'Enviando...' : 'Reportar Inmediatamente'}</Text>
+          {!createCase.isPending && <Ionicons name="arrow-forward" size={20} color="#ffffff" />}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
